@@ -197,7 +197,10 @@ async function startImageAnalysis(file) {
         const analysisResult = await analyzeForMarketing(combinedText);
         
         // 결과 저장 및 표시 (원본 OCR 텍스트 표시)
-        currentAnalysisResult = analysisResult;
+        // API 키가 있을 때만 분석 결과 저장
+        if (analysisResult) {
+            currentAnalysisResult = analysisResult;
+        }
         extractedText.value = combinedText; // 원본 OCR 텍스트 표시
         
         updateProgress(100, '분석 완료!');
@@ -438,16 +441,16 @@ function combineOCRResults(ocrResults) {
 
 // 마케팅 분석 수행
 async function analyzeForMarketing(extractedText) {
-    // API 키 확인 - 없으면 기본 분석 제공
+    // API 키 확인 - 없으면 null 반환 (분석 제공 안 함)
     const apiKeyInput = document.getElementById('apiKeyInput');
-    const hasApiKey = apiKeyInput && apiKeyInput.value.trim().length > 0;
+    const apiKeyValue = apiKeyInput ? apiKeyInput.value.trim() : '';
     
-    if (!hasApiKey) {
-        // API 키가 없을 때 기본 분석 제공
-        return generateBasicAnalysis(extractedText);
+    if (!apiKeyValue || !apiKeyValue.startsWith('sk-')) {
+        // API 키가 없거나 올바르지 않으면 분석 제공하지 않음
+        return null;
     }
     
-    // API 키가 있을 때 AI 분석 수행
+    // API 키가 있을 때만 AI 분석 수행
     const prompt = `당신은 10년 경력의 디지털 마케팅 전문가입니다. 다음 OCR 추출 텍스트를 분석하여 실무에 바로 활용 가능한 마케팅 인사이트를 제공해주세요.
 
 추출된 텍스트:
@@ -457,30 +460,38 @@ ${extractedText}
 - 마케팅 대행사 실무진이 바로 활용할 수 있는 구체적 인사이트 제공
 - 각 플랫폼별 최적화 전략 수립을 위한 기초 데이터 도출
 - 성과 예측 가능한 요소들 식별
+- ROI 최적화를 위한 실행 가능한 전략 도출
 
 실무 중심 분석 요구사항:
-1. 타겟 페르소나를 구체적으로 정의 (연령, 성별, 관심사, 구매력 등)
-2. 경쟁 우위 요소를 명확히 식별
-3. 플랫폼별 어필 포인트 차별화 방향 제시
-4. 예상 CTR 향상 요소 분석
-5. 리타겟팅 전략 수립을 위한 고객 여정 단계 파악
+1. 타겟 페르소나를 구체적으로 정의 (연령, 성별, 관심사, 구매력, 라이프스타일 등)
+2. 경쟁 우위 요소를 명확히 식별하고 활용 방안 제시
+3. 플랫폼별 어필 포인트 차별화 방향 및 최적 타이밍 분석
+4. 예상 CTR 향상 요소 분석 및 구체적 개선 포인트 도출
+5. 리타겟팅 전략 수립을 위한 고객 여정 단계 및 터치포인트 파악
+6. 실제 광고 운영 시 고려해야 할 리스크 요소 및 대응 방안
+
+중요 지침:
+- 추상적 표현보다는 구체적이고 실행 가능한 인사이트 제공
+- 업계 벤치마크 대비 차별화 포인트 명확히 제시
+- 예산 효율성을 고려한 우선순위 전략 포함
+- 측정 가능한 KPI 및 성과 지표 제안
 
 응답 형식 (이모티콘 사용 금지):
-제품명: [제품/서비스명]
-핵심가치: [고객에게 제공하는 핵심 가치]
-타겟고객: [구체적 페르소나 - 연령대, 특성, 니즈 포함]
-해결문제: [타겟이 겪는 구체적 페인포인트]
-차별화요소: [경쟁사 대비 명확한 우위점]
-감정어필: [감정적 트리거 요소]
-논리어필: [합리적 구매 근거]
-행동유도: [효과적인 CTA 전략]
-가격전략: [가격/할인 정보, 없으면 "정보없음"]
-핵심키워드: [SEO/광고 최적화용 키워드 5개를 쉼표로 구분]
+제품명: [제품/서비스명을 명확히 식별]
+핵심가치: [고객에게 제공하는 핵심 가치와 차별화 포인트]
+타겟고객: [구체적 페르소나 - 연령대, 성별, 소득수준, 관심사, 구매패턴 포함]
+해결문제: [타겟이 겪는 구체적 페인포인트와 니즈]
+차별화요소: [경쟁사 대비 명확한 우위점과 포지셔닝 전략]
+감정어필: [감정적 트리거 요소와 심리적 동기 유발 포인트]
+논리어필: [합리적 구매 근거와 객관적 혜택]
+행동유도: [효과적인 CTA 전략과 전환 최적화 방안]
+가격전략: [가격/할인 정보 및 가격 경쟁력, 없으면 "정보없음"]
+핵심키워드: [SEO/광고 최적화용 키워드 5개를 쉼표로 구분, 검색량과 경쟁도 고려]
 
-위 형식을 정확히 준수해주세요.`;
+위 형식을 정확히 준수하고, 각 항목마다 실무에서 바로 활용 가능한 구체적 내용을 제공해주세요.`;
 
     try {
-        const apiKey = getApiKey();
+        const apiKey = apiKeyValue; // 이미 검증된 API 키 사용
         const response = await fetch(OPENAI_API_URL, {
             method: 'POST',
             headers: {
@@ -505,73 +516,9 @@ ${extractedText}
         return parseAnalysisResponse(content, extractedText);
         
     } catch (error) {
-        console.error('AI 마케팅 분석 실패, 기본 분석으로 대체:', error);
-        return generateBasicAnalysis(extractedText);
+        console.error('AI 마케팅 분석 실패:', error);
+        return null;
     }
-}
-
-// 기본 분석 생성 (API 키 없을 때)
-function generateBasicAnalysis(extractedText) {
-    const text = extractedText.toLowerCase();
-    
-    // 간단한 키워드 기반 분석
-    const keywords = extractKeywords(text);
-    const productType = detectProductType(text);
-    const targetAudience = detectTargetAudience(text);
-    
-    return {
-        extractedText: extractedText,
-        productName: productType || '제품/서비스',
-        coreValue: '고품질 제품/서비스를 통한 고객 만족',
-        targetCustomer: targetAudience || '20-40대 주요 고객층',
-        problemSolved: '고객의 니즈와 문제점 해결',
-        differentiator: '차별화된 품질과 서비스',
-        emotionalAppeal: '신뢰감과 만족감 제공',
-        logicalAppeal: '합리적 가격과 검증된 품질',
-        pricingStrategy: null,
-        actionInducement: '지금 바로 확인해보세요',
-        marketingKeywords: keywords.length > 0 ? keywords : ['품질', '신뢰', '만족', '혜택', '서비스']
-    };
-}
-
-// 키워드 추출 함수
-function extractKeywords(text) {
-    const commonKeywords = [
-        '할인', '특가', '무료', '이벤트', '신제품', '런칭', '오픈',
-        '품질', '프리미엄', '고급', '최고', '인기', '베스트',
-        '건강', '뷰티', '패션', '음식', '여행', '교육', '기술',
-        '빠른', '간편', '쉬운', '안전', '효과', '만족'
-    ];
-    
-    const foundKeywords = [];
-    commonKeywords.forEach(keyword => {
-        if (text.includes(keyword)) {
-            foundKeywords.push(keyword);
-        }
-    });
-    
-    return foundKeywords.slice(0, 5);
-}
-
-// 제품 타입 감지
-function detectProductType(text) {
-    if (text.includes('화장품') || text.includes('뷰티') || text.includes('스킨케어')) return '뷰티/화장품';
-    if (text.includes('음식') || text.includes('맛집') || text.includes('요리')) return '음식/외식';
-    if (text.includes('패션') || text.includes('의류') || text.includes('옷')) return '패션/의류';
-    if (text.includes('건강') || text.includes('운동') || text.includes('피트니스')) return '건강/피트니스';
-    if (text.includes('교육') || text.includes('학습') || text.includes('강의')) return '교육/학습';
-    if (text.includes('여행') || text.includes('호텔') || text.includes('관광')) return '여행/숙박';
-    return null;
-}
-
-// 타겟 고객 감지
-function detectTargetAudience(text) {
-    if (text.includes('20대') || text.includes('젊은')) return '20대 젊은층';
-    if (text.includes('30대') || text.includes('직장인')) return '30대 직장인';
-    if (text.includes('40대') || text.includes('중년')) return '40대 중년층';
-    if (text.includes('여성') || text.includes('엄마')) return '여성 고객';
-    if (text.includes('남성') || text.includes('아빠')) return '남성 고객';
-    return null;
 }
 
 // 분석 응답 파싱
@@ -684,19 +631,19 @@ async function generateCopies() {
     showLoading();
     
     try {
-        // 분석 데이터 준비
-        let analysisData = currentAnalysisResult || {
-            productName: '제품/서비스',
-            coreValue: '핵심 가치 제안',
-            targetCustomer: '타겟 고객',
-            problemSolved: '해결하는 문제',
-            differentiator: '차별화 요소',
-            emotionalAppeal: '감정적 어필',
-            logicalAppeal: '논리적 어필',
-            pricingStrategy: null,
-            actionInducement: 'CTA 전략',
-            marketingKeywords: ['브랜드', '가치', '혜택', '품질', '신뢰']
-        };
+        // 분석 데이터 준비 - API 키가 있으면 새로 분석 수행
+        let analysisData = null;
+        
+        // API 키가 있으면 실시간 마케팅 분석 수행
+        const apiKeyInput = document.getElementById('apiKeyInput');
+        const hasValidApiKey = apiKeyInput && apiKeyInput.value.trim().startsWith('sk-');
+        
+        if (hasValidApiKey) {
+            updateLoadingMessage('마케팅 분석 수행 중...');
+            analysisData = await analyzeForMarketing(textContent);
+        }
+        
+        // 분석 데이터가 없으면 기본값 사용하지 않음 (null 유지)
         
         // 플랫폼별 카피 생성
         updateLoadingMessage('AI 카피 생성 중...');
@@ -927,7 +874,20 @@ ${uniqueApproach[variation.creativity]}
 
 // 분석 보고서 표시
 function displayAnalysisReport(analysisData) {
-    if (!analysisData) return;
+    if (!analysisData) {
+        // API 키가 없어서 분석 데이터가 없을 때
+        analysisContent.innerHTML = `
+            <div class="analysis-report">
+                <h3 class="report-title">실무 활용 가능한 마케팅 전략 분석</h3>
+                <div class="analysis-item">
+                    <div class="analysis-content" style="text-align: center; color: var(--gray-500); padding: 20px;">
+                        OpenAI API 키를 입력하면 AI 마케팅 분석을 제공합니다.
+                    </div>
+                </div>
+            </div>
+        `;
+        return;
+    }
     
     analysisContent.innerHTML = `
         <div class="analysis-report">
