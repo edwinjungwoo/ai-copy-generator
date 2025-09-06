@@ -438,6 +438,16 @@ function combineOCRResults(ocrResults) {
 
 // 마케팅 분석 수행
 async function analyzeForMarketing(extractedText) {
+    // API 키 확인 - 없으면 기본 분석 제공
+    const apiKeyInput = document.getElementById('apiKeyInput');
+    const hasApiKey = apiKeyInput && apiKeyInput.value.trim().length > 0;
+    
+    if (!hasApiKey) {
+        // API 키가 없을 때 기본 분석 제공
+        return generateBasicAnalysis(extractedText);
+    }
+    
+    // API 키가 있을 때 AI 분석 수행
     const prompt = `당신은 10년 경력의 디지털 마케팅 전문가입니다. 다음 OCR 추출 텍스트를 분석하여 실무에 바로 활용 가능한 마케팅 인사이트를 제공해주세요.
 
 추출된 텍스트:
@@ -495,23 +505,73 @@ ${extractedText}
         return parseAnalysisResponse(content, extractedText);
         
     } catch (error) {
-        console.error('마케팅 분석 실패:', error);
-        
-        // 기본값 반환
-        return {
-            extractedText: extractedText,
-            productName: '제품/서비스',
-            coreValue: '고객에게 제공하는 핵심 가치',
-            targetCustomer: '주요 타겟 고객층',
-            problemSolved: '고객이 겪는 핵심 문제',
-            differentiator: '경쟁사 대비 차별화 요소',
-            emotionalAppeal: '감정적 어필 포인트',
-            logicalAppeal: '논리적/기능적 어필',
-            pricingStrategy: null,
-            actionInducement: 'CTA 및 행동 유도 전략',
-            marketingKeywords: ['브랜드', '가치', '혜택', '품질', '신뢰']
-        };
+        console.error('AI 마케팅 분석 실패, 기본 분석으로 대체:', error);
+        return generateBasicAnalysis(extractedText);
     }
+}
+
+// 기본 분석 생성 (API 키 없을 때)
+function generateBasicAnalysis(extractedText) {
+    const text = extractedText.toLowerCase();
+    
+    // 간단한 키워드 기반 분석
+    const keywords = extractKeywords(text);
+    const productType = detectProductType(text);
+    const targetAudience = detectTargetAudience(text);
+    
+    return {
+        extractedText: extractedText,
+        productName: productType || '제품/서비스',
+        coreValue: '고품질 제품/서비스를 통한 고객 만족',
+        targetCustomer: targetAudience || '20-40대 주요 고객층',
+        problemSolved: '고객의 니즈와 문제점 해결',
+        differentiator: '차별화된 품질과 서비스',
+        emotionalAppeal: '신뢰감과 만족감 제공',
+        logicalAppeal: '합리적 가격과 검증된 품질',
+        pricingStrategy: null,
+        actionInducement: '지금 바로 확인해보세요',
+        marketingKeywords: keywords.length > 0 ? keywords : ['품질', '신뢰', '만족', '혜택', '서비스']
+    };
+}
+
+// 키워드 추출 함수
+function extractKeywords(text) {
+    const commonKeywords = [
+        '할인', '특가', '무료', '이벤트', '신제품', '런칭', '오픈',
+        '품질', '프리미엄', '고급', '최고', '인기', '베스트',
+        '건강', '뷰티', '패션', '음식', '여행', '교육', '기술',
+        '빠른', '간편', '쉬운', '안전', '효과', '만족'
+    ];
+    
+    const foundKeywords = [];
+    commonKeywords.forEach(keyword => {
+        if (text.includes(keyword)) {
+            foundKeywords.push(keyword);
+        }
+    });
+    
+    return foundKeywords.slice(0, 5);
+}
+
+// 제품 타입 감지
+function detectProductType(text) {
+    if (text.includes('화장품') || text.includes('뷰티') || text.includes('스킨케어')) return '뷰티/화장품';
+    if (text.includes('음식') || text.includes('맛집') || text.includes('요리')) return '음식/외식';
+    if (text.includes('패션') || text.includes('의류') || text.includes('옷')) return '패션/의류';
+    if (text.includes('건강') || text.includes('운동') || text.includes('피트니스')) return '건강/피트니스';
+    if (text.includes('교육') || text.includes('학습') || text.includes('강의')) return '교육/학습';
+    if (text.includes('여행') || text.includes('호텔') || text.includes('관광')) return '여행/숙박';
+    return null;
+}
+
+// 타겟 고객 감지
+function detectTargetAudience(text) {
+    if (text.includes('20대') || text.includes('젊은')) return '20대 젊은층';
+    if (text.includes('30대') || text.includes('직장인')) return '30대 직장인';
+    if (text.includes('40대') || text.includes('중년')) return '40대 중년층';
+    if (text.includes('여성') || text.includes('엄마')) return '여성 고객';
+    if (text.includes('남성') || text.includes('아빠')) return '남성 고객';
+    return null;
 }
 
 // 분석 응답 파싱
@@ -871,7 +931,7 @@ function displayAnalysisReport(analysisData) {
     
     analysisContent.innerHTML = `
         <div class="analysis-report">
-            <h3 class="report-title">랜딩 페이지 기반 분석</h3>
+            <h3 class="report-title">실무 활용 가능한 마케팅 전략 분석</h3>
             
             <div class="analysis-item">
                 <div class="analysis-label">핵심 가치</div>
