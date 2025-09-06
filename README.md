@@ -1,10 +1,10 @@
-# AI 카피 생성기 - 가치Write
+# AI 카피 생성기
 
 마케팅 대행사 실무진을 위한 전문적인 AI 카피 생성 웹 애플리케이션입니다.
 
 ## 🚀 바로 사용하기
 
-**웹사이트**: [https://사용자명.github.io/저장소명](https://사용자명.github.io/저장소명)
+**웹사이트**: [https://edwinjungwoo.github.io/ai-copy-generator](https://edwinjungwoo.github.io/ai-copy-generator)
 
 ## 📋 주요 기능
 
